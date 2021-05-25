@@ -1,0 +1,9 @@
+db:
+  container_name: kops_db
+  image: postgres
+  environment:
+    POSTGRES_DB : demo_db
+    POSTGRES_USER: postgres
+    POSTGRES_PASSWORD: admin
+  ports:
+    - '5432:5432'
