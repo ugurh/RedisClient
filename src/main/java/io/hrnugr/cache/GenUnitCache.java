@@ -7,7 +7,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import redis.clients.jedis.Jedis;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 import static io.hrnugr.util.Messages.KEY_IS_EMPTY;
 import static io.hrnugr.util.Messages.VALUE_IS_EMPTY;
@@ -85,5 +87,23 @@ public class GenUnitCache {
         } finally {
             redisClient.closeJedis(jedis);
         }
+    }
+
+    public List<GenUnit> getAllUnit() {
+        Jedis jedis = RedisClient.getJedis();
+        List<GenUnit> unitList = new ArrayList<>();
+        try {
+            Set<String> itemSet = jedis.keys(groupName.concat("*"));
+            for (String item: itemSet) {
+                item = jedis.get(item);
+                GenUnit unit = gson.fromJson(item, GenUnit.class);
+                unitList.add(unit);
+            }
+        } catch (Exception e) {
+            log.error(e.getLocalizedMessage());
+        } finally {
+            redisClient.closeJedis(jedis);
+        }
+        return unitList;
     }
 }

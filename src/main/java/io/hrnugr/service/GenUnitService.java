@@ -5,9 +5,12 @@ import io.hrnugr.config.RedisClient;
 import io.hrnugr.entity.GenUnit;
 import io.hrnugr.repository.GenUnitRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.Collections;
+import java.util.List;
 
 @Service
 public class GenUnitService {
@@ -53,16 +56,33 @@ public class GenUnitService {
 
 
     /**
-     * @param genUnitId
+     * @param unitId
      * Delete GenUnit by unitId
      */
-    public void deleteById(String genUnitId) {
-        GenUnit genUnit = genUnitRepository.findById(genUnitId).orElse(null);
+    public void deleteById(String unitId) {
+        GenUnit genUnit = genUnitRepository.findById(unitId).orElse(null);
         if (genUnit != null){
-            genUnitRepository.deleteById(genUnitId);
+            genUnitRepository.deleteById(unitId);
         }
         if (redisClient.isConnected()){
-            genUnitCache.delete(genUnitId);
+            genUnitCache.delete(unitId);
         }
     }
+
+    public List<GenUnit> getAll() {
+        List<GenUnit> unitList;
+        if (redisClient.isConnected()){
+            unitList = genUnitCache.getAllUnit();
+            if (unitList.size() == 0){
+                unitList = genUnitRepository.findAll();
+                if (unitList.size() > 0){
+                    genUnitCache.save(unitList);
+                }
+            }
+        }else{
+            unitList = genUnitRepository.findAll();
+        }
+        return unitList;
+    }
+
 }
