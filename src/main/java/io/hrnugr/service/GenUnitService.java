@@ -5,15 +5,15 @@ import io.hrnugr.config.RedisClient;
 import io.hrnugr.entity.GenUnit;
 import io.hrnugr.repository.GenUnitRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collections;
 import java.util.List;
 
 @Service
-public class GenUnitService {
+@Transactional(readOnly = true) //Read-only transaction have better performance.
+public class GenUnitService implements IGenUnitService{
 
     RedisClient redisClient = RedisClient.getInstance();
     GenUnitCache genUnitCache = GenUnitCache.getInstance();
@@ -46,7 +46,9 @@ public class GenUnitService {
      * @param genUnit
      * @return GenUnit Create new GenUnit or update GenUnit by unitId
      */
+    @Transactional
     public GenUnit create(GenUnit genUnit) {
+
         GenUnit genUnitDb = genUnitRepository.save(genUnit);
         if (redisClient.isConnected()){
             genUnitCache.save(Collections.singletonList(genUnit));
@@ -59,8 +61,9 @@ public class GenUnitService {
      * @param unitId
      * Delete GenUnit by unitId
      */
+    @Transactional
     public void deleteById(String unitId) {
-        GenUnit genUnit = genUnitRepository.findById(unitId).orElse(null);
+        var genUnit = genUnitRepository.findById(unitId).orElse(null);
         if (genUnit != null){
             genUnitRepository.deleteById(unitId);
         }

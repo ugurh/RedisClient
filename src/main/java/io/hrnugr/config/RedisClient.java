@@ -6,6 +6,7 @@ import org.apache.commons.lang3.StringUtils;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
+import redis.clients.jedis.exceptions.JedisConnectionException;
 
 import static io.hrnugr.util.Messages.HOST_IS_EMPTY;
 import static io.hrnugr.util.Messages.PORT_IS_EMPTY;
@@ -62,29 +63,35 @@ public class RedisClient {
         if (pool == null) {
             synchronized (RedisClient.class) {
                 if (null == pool) {
-                    JedisPoolConfig poolConfig = new JedisPoolConfig();
-                    // Maximum active connections to Redis instance
-                    poolConfig.setMaxTotal(128);
-                    // Number of connections to Redis that just sit there and do nothing
-                    poolConfig.setMaxIdle(200);
-                    // Minimum number of idle connections to Redis - these can be seen as always open and ready to serve
-                    poolConfig.setMinIdle(50);
-                    // Maximum number of connections to test in each idle check
-                    poolConfig.setNumTestsPerEvictionRun(10);
-                    // Idle connection checking period
-                    poolConfig.setTimeBetweenEvictionRunsMillis(5000);
-                    //Tests whether connection is dead when connection retrieval method is called
-                    poolConfig.setTestOnBorrow(true);
-                    // Tests whether connection is dead when returning a connection to the pool
-                    poolConfig.setTestOnReturn(true);
-                    // Tests whether connections are dead during idle periods
-                    poolConfig.setTestWhileIdle(true);
-                    pool = new JedisPool(poolConfig, host, port, 100000);
-                    /**
-                     *
-                    pool = new JedisPool(poolConfig, host, port, connectTimeout,operationTimeout,password, db,
-                       clientName, useSsl, sslSocketFactory, sslParameters, hostnameVerifier);
-                    */
+                    try {
+                        JedisPoolConfig poolConfig = new JedisPoolConfig();
+                        // Maximum active connections to Redis instance
+                        poolConfig.setMaxTotal(128);
+                        // Number of connections to Redis that just sit there and do nothing
+                        poolConfig.setMaxIdle(200);
+                        // Minimum number of idle connections to Redis - these can be seen as always open and ready to serve
+                        poolConfig.setMinIdle(50);
+                        // Maximum number of connections to test in each idle check
+                        poolConfig.setNumTestsPerEvictionRun(10);
+                        // Idle connection checking period
+                        poolConfig.setTimeBetweenEvictionRunsMillis(5000);
+                        //Tests whether connection is dead when connection retrieval method is called
+                        poolConfig.setTestOnBorrow(true);
+                        // Tests whether connection is dead when returning a connection to the pool
+                        poolConfig.setTestOnReturn(true);
+                        // Tests whether connections are dead during idle periods
+                        poolConfig.setTestWhileIdle(true);
+                        pool = new JedisPool(poolConfig, host, port, 100000);
+                        /**
+                         *
+                         pool = new JedisPool(poolConfig, host, port, connectTimeout,operationTimeout,password, db,
+                         clientName, useSsl, sslSocketFactory, sslParameters, hostnameVerifier);
+                         */
+                    }catch (JedisConnectionException exception){
+                        throw new RuntimeException("Redis Bağlantısı Yapılmadı");
+                    }
+
+
                 }
             }
         }
@@ -110,7 +117,13 @@ public class RedisClient {
      * Get Jedis
      */
     public static Jedis getJedis() {
-        return pool.getResource();
+        Jedis jedis = null;
+        try {
+            jedis = pool.getResource();;
+        }catch (Exception e) {
+            throw new RuntimeException("Beklenilmeyen bir hata oluştu");
+        }
+        return jedis;
     }
 
     public void returnJedis(Jedis jedis) {

@@ -1,5 +1,3 @@
-
-
 spring:
   resources:
     add-mappings : true
@@ -14,6 +12,7 @@ spring:
       default_schema: redis
       ddl-auto: create-drop
     generate-ddl : true
+    open-in-view: false  # disable global request transactions
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
